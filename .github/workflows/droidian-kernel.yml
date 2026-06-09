@@ -57,6 +57,24 @@ jobs:
               touch "$link/Kconfig" "$link/Makefile"
             fi
           done
+          # kernel-snippet.mk merges droidian/common_fragments/halium.config and
+          # droidian/common_fragments/droidian.config (shipped by linux-packaging-snippets)
+          # then droidian/.config (device-specific) on top of gki_defconfig.
+          # Copy common fragments from the installed package; fall back to empty files.
+          SNIPPETS=/usr/share/linux-packaging-snippets
+          mkdir -p droidian/common_fragments
+          for frag in halium droidian; do
+            if [ -f "$SNIPPETS/common_fragments/${frag}.config" ]; then
+              cp "$SNIPPETS/common_fragments/${frag}.config" "droidian/common_fragments/${frag}.config"
+            elif [ -f "$SNIPPETS/${frag}.config" ]; then
+              cp "$SNIPPETS/${frag}.config" "droidian/common_fragments/${frag}.config"
+            else
+              touch "droidian/common_fragments/${frag}.config"
+            fi
+          done
+          # Merge device-specific fragments into droidian/.config
+          cat droidian/kalama.config droidian/oplus.config droidian/droidian.config \
+            > droidian/.config
           releng-build-package
 
       - name: Collect .deb artifacts
