@@ -36,6 +36,8 @@ jobs:
           IS_CONTAINER: "true"
           # Tell debuild to cross-compile for arm64.
           RELENG_HOST_ARCH: "arm64"
+          # Allow git to traverse across the Docker volume filesystem boundary.
+          GIT_DISCOVERY_ACROSS_FILESYSTEM: "1"
         run: |
           # GitHub Actions does not persist the safe.directory set by actions/checkout
           # into the container's HOME. Configure it here so git commands work.
