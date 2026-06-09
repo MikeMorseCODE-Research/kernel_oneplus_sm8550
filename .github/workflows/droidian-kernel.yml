@@ -43,9 +43,8 @@ jobs:
           # The Droidian container has stale GPG keys. releng-build-package runs its
           # own internal apt-get update, so we must configure APT system-wide to
           # tolerate unsigned repos before calling it.
-          echo 'Acquire::AllowInsecureRepositories "true";
-Acquire::AllowDowngradeToInsecureRepositories "true";' \
-            > /etc/apt/apt.conf.d/99allow-insecure
+          echo 'Acquire::AllowInsecureRepositories "true";' > /etc/apt/apt.conf.d/99allow-insecure
+          echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-insecure
           releng-build-package
 
       - name: Collect .deb artifacts
