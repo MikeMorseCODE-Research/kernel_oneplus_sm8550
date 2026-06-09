@@ -24,9 +24,8 @@ jobs:
         run: |
           # The container image has stale Droidian repo keys (NO_PUBKEY 5E775B2A27AB0C94).
           # Update ignoring signature errors; the package index is already cached in the image.
-          dpkg --add-architecture arm64
           apt-get update --allow-insecure-repositories -o Acquire::AllowInsecureRepositories=true || true
-          apt-get install -y --allow-unauthenticated --no-install-recommends linux-packaging-snippets cpio halium-generic-initramfs:arm64
+          apt-get install -y --allow-unauthenticated --no-install-recommends linux-packaging-snippets cpio
 
       - name: Build kernel packages
         env:
@@ -89,6 +88,13 @@ jobs:
           # the droidian.config disables below.
           cat droidian/kalama.config droidian/oplus.config droidian/droidian.config \
             > droidian/.config
+          # halium-generic-initramfs is unavailable in this container; create a stub
+          # so kernel-snippet.mk can proceed. Boot header v4 has ramdisk_size=0 anyway.
+          INITRAMFS_DIR=/usr/lib/aarch64-linux-gnu/halium-generic-initramfs
+          if [ ! -f "$INITRAMFS_DIR/initrd.img-halium-generic" ]; then
+            mkdir -p "$INITRAMFS_DIR"
+            echo | cpio -o -H newc | gzip > "$INITRAMFS_DIR/initrd.img-halium-generic"
+          fi
           releng-build-package
 
       - name: Collect .deb artifacts
