@@ -78,6 +78,8 @@ modules.order
 #
 /debian/
 !/debian/kernel-info.mk
+!/debian/source/
+!/debian/source/format
 
 # Allow GitHub Actions workflow directory (overrides .* rule above)
 !.github/
