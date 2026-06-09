@@ -1,0 +1,35 @@
+Source: linux-android-oneplus-salami
+Section: kernel
+Priority: optional
+Maintainer: Droidian Porter <porter@droidian.org>
+Build-Depends: debhelper-compat (= 13),
+ linux-packaging-snippets,
+ clang,
+ llvm,
+ lld,
+ binutils,
+ binutils-aarch64-linux-gnu,
+ libssl-dev,
+ bc,
+ bison,
+ flex,
+ rsync
+Standards-Version: 4.5.1
+
+Package: linux-image-5.15-oneplus-salami
+Architecture: arm64
+Depends: ${misc:Depends}
+Description: Linux kernel for OnePlus 11 (salami)
+ Kernel image for the OnePlus 11 (SM8550, salami).
+
+Package: linux-bootimage-5.15-oneplus-salami
+Architecture: arm64
+Depends: ${misc:Depends}, linux-image-5.15-oneplus-salami, flash-bootimage
+Description: Boot image for OnePlus 11 (salami)
+ Boot image for the OnePlus 11 (SM8550, salami).
+
+Package: linux-headers-5.15-oneplus-salami
+Architecture: arm64
+Depends: ${misc:Depends}
+Description: Linux kernel headers for OnePlus 11 (salami)
+ Kernel headers for the OnePlus 11 (SM8550, salami).

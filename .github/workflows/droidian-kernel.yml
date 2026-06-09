@@ -34,6 +34,8 @@ jobs:
           # git checkout origin/${BRANCH} fails. IS_CONTAINER=true makes it use
           # git rev-parse --abbrev-ref HEAD instead.
           IS_CONTAINER: "true"
+          # Tell debuild to cross-compile for arm64.
+          RELENG_HOST_ARCH: "arm64"
         run: |
           # GitHub Actions does not persist the safe.directory set by actions/checkout
           # into the container's HOME. Configure it here so git commands work.
