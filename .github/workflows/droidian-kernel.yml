@@ -27,7 +27,33 @@ jobs:
           apt-get update --allow-insecure-repositories -o Acquire::AllowInsecureRepositories=true || true
           apt-get install -y --allow-unauthenticated --no-install-recommends linux-packaging-snippets
 
+      - name: Diagnose releng-build-package
+        run: |
+          echo "=== releng-build-package script ==="
+          cat $(which releng-build-package) || find /usr -name releng-build-package 2>/dev/null | head -3 | xargs cat
+          echo "=== installed snippets files ==="
+          dpkg -L linux-packaging-snippets | head -40
+
+      - name: Configure gbp branch
+        run: |
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          echo "Current branch: $BRANCH"
+          # releng-build-package reads upstream-branch from debian/gbp.conf
+          # to do git checkout origin/<upstream-branch>. Provide our branch.
+          cat > debian/gbp.conf << EOF
+          [DEFAULT]
+          upstream-branch = $BRANCH
+          upstream-tag = upstream/%(version)s
+          debian-branch = $BRANCH
+          sign-tags = False
+          EOF
+          echo "=== debian/gbp.conf ==="
+          cat debian/gbp.conf
+
       - name: Build kernel packages
+        env:
+          PARENT: ${{ github.ref_name }}
+          UPSTREAM_BRANCH: ${{ github.ref_name }}
         run: |
           releng-build-package
 
