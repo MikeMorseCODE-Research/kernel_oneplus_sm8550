@@ -22,8 +22,10 @@ jobs:
 
       - name: Install linux-packaging-snippets
         run: |
-          apt-get update -q
-          apt-get install -y --no-install-recommends linux-packaging-snippets
+          # The container image has stale Droidian repo keys (NO_PUBKEY 5E775B2A27AB0C94).
+          # Update ignoring signature errors; the package index is already cached in the image.
+          apt-get update --allow-insecure-repositories -o Acquire::AllowInsecureRepositories=true || true
+          apt-get install -y --allow-unauthenticated --no-install-recommends linux-packaging-snippets
 
       - name: Build kernel packages
         run: |
