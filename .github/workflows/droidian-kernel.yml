@@ -57,6 +57,15 @@ jobs:
               touch "$link/Kconfig" "$link/Makefile"
             fi
           done
+          # The installed kernel-snippet.mk predates the BUILD_LLVM=1 → LLVM=1 LLVM_IAS=1
+          # mapping. Without LLVM=1, LD defaults to the host x86_64 GNU ld which cannot
+          # link arm64 objects, and ThinLTO (CONFIG_LTO_CLANG_THIN) fails. Patch every
+          # make invocation line in the snippet to inject LLVM=1 LLVM_IAS=1.
+          SNIPPET=/usr/share/linux-packaging-snippets/kernel-snippet.mk
+          if ! grep -q 'LLVM=1' "$SNIPPET"; then
+            sed -i '/\$(MAKE)/s/CC=$(BUILD_CC)/LLVM=1 LLVM_IAS=1 CC=$(BUILD_CC)/g' "$SNIPPET"
+            echo "Patched kernel-snippet.mk: added LLVM=1 LLVM_IAS=1 to make invocations"
+          fi
           # kernel-snippet.mk merges droidian/common_fragments/halium.config and
           # droidian/common_fragments/droidian.config (shipped by linux-packaging-snippets)
           # then droidian/.config (device-specific) on top of gki_defconfig.
@@ -72,7 +81,9 @@ jobs:
               touch "droidian/common_fragments/${frag}.config"
             fi
           done
-          # Merge device-specific fragments into droidian/.config
+          # Merge device-specific fragments into droidian/.config.
+          # oplus.config enables SM8550-specific features that are excluded from
+          # the droidian.config disables below.
           cat droidian/kalama.config droidian/oplus.config droidian/droidian.config \
             > droidian/.config
           releng-build-package
