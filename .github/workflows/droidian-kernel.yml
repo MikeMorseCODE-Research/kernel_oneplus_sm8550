@@ -25,7 +25,7 @@ jobs:
           # The container image has stale Droidian repo keys (NO_PUBKEY 5E775B2A27AB0C94).
           # Update ignoring signature errors; the package index is already cached in the image.
           apt-get update --allow-insecure-repositories -o Acquire::AllowInsecureRepositories=true || true
-          apt-get install -y --allow-unauthenticated --no-install-recommends linux-packaging-snippets
+          apt-get install -y --allow-unauthenticated --no-install-recommends linux-packaging-snippets cpio
 
       - name: Build kernel packages
         env:
