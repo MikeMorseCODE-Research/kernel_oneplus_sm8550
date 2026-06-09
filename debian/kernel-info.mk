@@ -17,18 +17,20 @@ KERNEL_CONFIG_USE_DIFFCONFIG = 0
 
 ################################################################################
 ## Boot image
-## OnePlus 11 (SM8550) launches with Android 13 — GKI 2.0, boot header v4
-## boot.img contains kernel + generic ramdisk; vendor_boot.img is left stock.
+## OnePlus 11 (SM8550) — Android 13 GKI 2.0, boot header version 4.
+##
+## Android 13 uses a 3-way split:
+##   boot.img      = kernel Image only, NO ramdisk (ramdisk_size = 0)
+##   init_boot.img = generic ramdisk (Droidian will provide its own here)
+##   vendor_boot.img = vendor ramdisk + DTBs + vendor cmdline (left stock)
+##
+## Confirmed from AlphaDroid stock boot.img header:
+##   header_version = 4, header_size = 1584, ramdisk_size = 0, cmdline = ""
 KERNEL_BOOTIMAGE_VERSION = 4
 KERNEL_BOOTIMAGE_PAGE_SIZE = 4096
 
-# Cmdline from stock OnePlus 11 kernel; confirm against /proc/cmdline on device
-KERNEL_BOOTIMAGE_CMDLINE = console=ttyMSM0,115200n8 earlycon qcom_geni_serial.con_enabled=1 \
-    androidboot.hardware=qcom androidboot.console=ttyMSM0 androidboot.memcg=1 \
-    lpm_levels.sleep_disabled=1 msm_rtb.filter=0x237 service_locator.enable=1 \
-    androidboot.usbcontroller=a600000.dwc3 swiotlb=0 loop.max_part=7 \
-    cgroup.memory=nokmem,nosocket pcie_ports=compat \
-    iptable_raw.raw_before_defrag=1 ip6table_raw.raw_before_defrag=1
+# cmdline is empty in boot.img v4; vendor cmdline lives in vendor_boot.img
+KERNEL_BOOTIMAGE_CMDLINE =
 
 KERNEL_BOOTIMAGE_DTB_OVERLAY_SUPPORT = 0
 
