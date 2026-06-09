@@ -40,6 +40,12 @@ jobs:
           # GitHub Actions does not persist the safe.directory set by actions/checkout
           # into the container's HOME. Configure it here so git commands work.
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          # The Droidian container has stale GPG keys. releng-build-package runs its
+          # own internal apt-get update, so we must configure APT system-wide to
+          # tolerate unsigned repos before calling it.
+          echo 'Acquire::AllowInsecureRepositories "true";
+Acquire::AllowDowngradeToInsecureRepositories "true";' \
+            > /etc/apt/apt.conf.d/99allow-insecure
           releng-build-package
 
       - name: Collect .deb artifacts
