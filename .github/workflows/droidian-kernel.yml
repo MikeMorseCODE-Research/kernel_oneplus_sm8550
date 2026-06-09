@@ -1,0 +1,43 @@
+name: Droidian Kernel (OnePlus 11 / salami)
+
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build kernel .deb packages
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/droidian/build-essential:bookworm-amd64
+      options: --privileged
+
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install linux-packaging-snippets
+        run: |
+          apt-get update -q
+          apt-get install -y --no-install-recommends linux-packaging-snippets
+
+      - name: Build kernel packages
+        run: |
+          releng-build-package
+
+      - name: Collect .deb artifacts
+        run: |
+          mkdir -p /tmp/out
+          find . -maxdepth 1 -name "*.deb" -exec cp {} /tmp/out/ \;
+          ls -lh /tmp/out/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: droidian-kernel-oneplus-salami
+          path: /tmp/out/*.deb
+          if-no-files-found: error

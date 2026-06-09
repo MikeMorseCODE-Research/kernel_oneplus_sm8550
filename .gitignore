@@ -74,9 +74,14 @@ modules.order
 /*.spec
 
 #
-# Debian directory (make deb-pkg)
+# Debian directory (make deb-pkg) — exclude Droidian packaging from this ignore
 #
 /debian/
+!/debian/kernel-info.mk
+
+# Allow GitHub Actions workflow directory (overrides .* rule above)
+!.github/
+!.github/**
 
 #
 # Snap directory (make snap-pkg)
