@@ -45,6 +45,18 @@ jobs:
           # tolerate unsigned repos before calling it.
           echo 'Acquire::AllowInsecureRepositories "true";' > /etc/apt/apt.conf.d/99allow-insecure
           echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-insecure
+          # The vendor kernel has ~30 symlinks pointing into sm8550-modules and
+          # sm8550-devicetrees which are separate repos not checked out here.
+          # Kconfig traversal hits them unconditionally; stub each dangling symlink
+          # with a real directory + empty Kconfig + Makefile so the build can proceed.
+          find . -maxdepth 10 -type l 2>/dev/null | while IFS= read -r link; do
+            if ! test -e "$link"; then
+              echo "Stubbing dangling symlink: $link"
+              rm "$link"
+              mkdir -p "$link"
+              touch "$link/Kconfig" "$link/Makefile"
+            fi
+          done
           releng-build-package
 
       - name: Collect .deb artifacts
