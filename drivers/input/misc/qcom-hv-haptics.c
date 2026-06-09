@@ -2533,7 +2533,7 @@ static int haptics_load_constant_effect(struct haptics_chip *chip, u8 amplitude)
 	}
 
 #ifdef OPLUS_FEATURE_CHG_BASIC
-	if (get_boot_mode() == MSM_BOOT_MODE__FACTORY ||
+	if (get_boot_mode() == MSM_BOOT_MODE__FACTORY2 ||
 			get_boot_mode() == MSM_BOOT_MODE__RF ||
 			get_boot_mode() == MSM_BOOT_MODE__WLAN) {
 		if (chip->config.vibrator_type == VIBRATOR_TYPE_SLA0815 ||
