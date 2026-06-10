@@ -3,6 +3,9 @@
 # Makefile for ALSA
 #
 
+# mixer_s1810c has a large stack frame; suppress the warning per-file
+CFLAGS_mixer_s1810c.o		+= -Wno-frame-larger-than
+
 snd-usb-audio-objs := 	card.o \
 			clock.o \
 			endpoint.o \
@@ -23,19 +26,3 @@ snd-usb-audio-objs := 	card.o \
 			validate.o
 
 snd-usb-audio-$(CONFIG_SND_USB_AUDIO_USE_MEDIA_CONTROLLER) += media.o
-
-snd-usbmidi-lib-objs := midi.o
-
-# Toplevel Module Dependency
-obj-$(CONFIG_SND_USB_AUDIO) += snd-usb-audio.o snd-usbmidi-lib.o
-
-obj-$(CONFIG_SND_USB_UA101) += snd-usbmidi-lib.o
-obj-$(CONFIG_SND_USB_USX2Y) += snd-usbmidi-lib.o
-obj-$(CONFIG_SND_USB_US122L) += snd-usbmidi-lib.o
-
-obj-$(CONFIG_SND) += misc/ usx2y/ caiaq/ 6fire/ hiface/ bcd2000/
-obj-$(CONFIG_SND_USB_LINE6)	+= line6/
-
-CFLAGS_xhci-sec.o := -I$(srctree)/drivers/usb/host
-snd-usb-audio-qmi-objs := usb_audio_qmi_v01.o usb_audio_qmi_svc.o xhci-sec.o
-obj-$(CONFIG_SND_USB_AUDIO_QMI) += snd-usb-audio-qmi.o
