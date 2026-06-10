@@ -67,7 +67,7 @@ obj-$(CONFIG_PROFILER)		+= profiler.o
 obj-$(CONFIG_QRC)		+= qrc/
 obj-$(CONFIG_HDMI_INPUT_MUX)	+= hdmi_input_mux.o
 
-obj-y	+= tri_state_key/
+# obj-y	+= tri_state_key/
 
 #ifdef OPLUS_FEATURE_RF_CABLE_DETECT
 obj-$(CONFIG_OPLUS_RF_CABLE_MONITOR)	+= oplus_rf_cable_monitor/oplus_bsp_rfcablemonitor.o
