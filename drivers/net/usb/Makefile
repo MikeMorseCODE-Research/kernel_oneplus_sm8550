@@ -2,6 +2,7 @@
 #
 # Makefile for USB Network drivers
 #
+CFLAGS_r8152.o			+= -Wno-frame-larger-than
 
 obj-$(CONFIG_USB_CATC)		+= catc.o
 obj-$(CONFIG_USB_KAWETH)	+= kaweth.o
