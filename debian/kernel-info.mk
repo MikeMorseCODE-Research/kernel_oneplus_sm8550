@@ -6,6 +6,11 @@ KERNEL_VARIANT = android
 KERNEL_DEVICE_VENDOR = oneplus
 KERNEL_DEVICE_MODEL = salami
 
+# kernel-snippet.mk uses DEVICE_VENDOR/DEVICE_MODEL (no KERNEL_ prefix)
+# for KERNEL_RELEASE and staging directory computation.
+DEVICE_VENDOR = oneplus
+DEVICE_MODEL = salami
+
 KERNEL_ARCH = arm64
 KERNEL_BUILD_TARGET = Image
 
