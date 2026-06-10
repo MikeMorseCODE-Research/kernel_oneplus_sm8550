@@ -4,13 +4,12 @@ include /usr/share/linux-packaging-snippets/kernel-snippet.mk
 %:
 	dh $@
 
-# halium-generic-initramfs is unavailable in this build environment.
-# Override the snippet's cp rules with stub empty gzip initramfs files.
-# Boot header v4 sets ramdisk_size=0, so content does not matter.
+# Boot header v4: ramdisk_size must be 0 (ramdisk lives in init_boot.img).
+# Zero-byte files make mkbootimg record ramdisk_size=0 in the header.
 out/KERNEL_OBJ/initramfs.gz: out/kernel-stamp
 	mkdir -p out/KERNEL_OBJ
-	gzip -c /dev/null > $@
+	touch $@
 
 out/KERNEL_OBJ/recovery-initramfs.gz: out/kernel-stamp
 	mkdir -p out/KERNEL_OBJ
-	gzip -c /dev/null > $@
+	touch $@
