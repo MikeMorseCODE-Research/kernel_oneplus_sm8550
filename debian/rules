@@ -5,8 +5,12 @@ include /usr/share/linux-packaging-snippets/kernel-snippet.mk
 	dh $@
 
 # halium-generic-initramfs is unavailable in this build environment.
-# Override the snippet's cp rule with a stub empty gzip initramfs.
+# Override the snippet's cp rules with stub empty gzip initramfs files.
 # Boot header v4 sets ramdisk_size=0, so content does not matter.
 out/KERNEL_OBJ/initramfs.gz: out/kernel-stamp
+	mkdir -p out/KERNEL_OBJ
+	gzip -c /dev/null > $@
+
+out/KERNEL_OBJ/recovery-initramfs.gz: out/kernel-stamp
 	mkdir -p out/KERNEL_OBJ
 	gzip -c /dev/null > $@
