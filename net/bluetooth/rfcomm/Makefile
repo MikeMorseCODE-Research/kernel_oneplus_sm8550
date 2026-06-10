@@ -3,6 +3,8 @@
 # Makefile for the Linux Bluetooth RFCOMM layer.
 #
 
+CFLAGS_core.o			+= -Wno-frame-larger-than
+
 obj-$(CONFIG_BT_RFCOMM) += rfcomm.o
 
 rfcomm-y			:= core.o sock.o
