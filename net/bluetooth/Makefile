@@ -3,6 +3,9 @@
 # Makefile for the Linux Bluetooth subsystem.
 #
 
+# Bluetooth has multiple large-frame functions under Clang 15
+ccflags-y			+= -Wno-frame-larger-than
+
 obj-$(CONFIG_BT)	+= bluetooth.o
 obj-$(CONFIG_BT_RFCOMM)	+= rfcomm/
 obj-$(CONFIG_BT_BNEP)	+= bnep/
