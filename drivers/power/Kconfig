@@ -88,7 +88,7 @@ config OPLUS_CHG_DRM_PANEL_NOTIFY
 	help
 	  Say Y to include support
 
-source "drivers/power/oplus/Kconfig"
+# source "drivers/power/oplus/Kconfig"
 
 menuconfig OPLUS_CHG_V2
 	tristate "OPLUS charging V2 system"
