@@ -72,4 +72,4 @@ BUILD_CROSS = 1
 
 # Build dependencies (installed inside the Droidian build container)
 KERNEL_BUILD_DEPENDS = clang llvm lld binutils binutils-aarch64-linux-gnu \
-    libssl-dev bc bison flex rsync
+    libssl-dev bc bison flex rsync libelf-dev zlib1g-dev
