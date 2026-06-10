@@ -68,6 +68,9 @@ jobs:
             sed -i '/\$(MAKE)/s/CC=$(BUILD_CC)/LLVM=1 LLVM_IAS=1 CC=$(BUILD_CC)/g' "$SNIPPET"
             echo "Patched kernel-snippet.mk: added LLVM=1 LLVM_IAS=1 to make invocations"
           fi
+          # halium-generic-initramfs is unavailable; patch the snippet to generate
+          # a stub initramfs with gzip instead of copying from the missing package.
+          sed -i 's|cp /usr/lib/aarch64-linux-gnu/halium-generic-initramfs/initrd.img-halium-generic|gzip -c /dev/null >|g' "$SNIPPET"
           # kernel-snippet.mk merges droidian/common_fragments/halium.config and
           # droidian/common_fragments/droidian.config (shipped by linux-packaging-snippets)
           # then droidian/.config (device-specific) on top of gki_defconfig.
@@ -90,9 +93,6 @@ jobs:
             > droidian/.config
           # halium-generic-initramfs is unavailable in this container; create a stub
           # so kernel-snippet.mk can proceed. Boot header v4 has ramdisk_size=0 anyway.
-          INITRAMFS_DIR=/usr/lib/aarch64-linux-gnu/halium-generic-initramfs
-          mkdir -p "$INITRAMFS_DIR"
-          gzip -c /dev/null > "$INITRAMFS_DIR/initrd.img-halium-generic"
           releng-build-package
 
       - name: Collect .deb artifacts
