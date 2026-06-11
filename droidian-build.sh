@@ -79,6 +79,9 @@ else
 fi
 
 releng-build-package
-cp ../*.deb "$PWD/" 2>/dev/null || true
+
+# dpkg-buildpackage drops .deb files one level above the source tree.
+# Copy them into the workspace so upload-artifact can find them there.
+find "$(dirname "$PWD")" -maxdepth 1 -name "*.deb" -exec cp -v {} "$PWD/" \; || true
 
 ccache -s

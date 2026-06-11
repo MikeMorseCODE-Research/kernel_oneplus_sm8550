@@ -44,7 +44,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: kernel-debs-${{ github.sha }}
-          path: ../*.deb
+          path: "*.deb"
           retention-days: 14
 
       - name: Upload build log
