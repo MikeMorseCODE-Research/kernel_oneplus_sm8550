@@ -4,6 +4,13 @@ include /usr/share/linux-packaging-snippets/kernel-snippet.mk
 %:
 	dh $@
 
+# The droidian-branch snippet has no plain out/kernel-stamp target (only
+# out/kernel-stamp.default and out/kernel-stamp.%). Something in the build
+# chain requests the unsuffixed form; alias it so the wildcard %: dh $@
+# doesn't catch it.
+out/kernel-stamp: out/kernel-stamp.default
+	@true
+
 # Boot header v4: ramdisk_size must be 0 (ramdisk lives in init_boot.img).
 # The droidian-branch snippet requests initramfs.default / initramfs.recovery-default
 # (pattern: initramfs.%) rather than the old initramfs.gz / recovery-initramfs.gz.
