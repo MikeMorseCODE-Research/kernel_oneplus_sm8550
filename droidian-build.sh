@@ -1,5 +1,41 @@
 #!/bin/bash
 set -e
+
+# ── Local bootstrap ──────────────────────────────────────────────────────────
+# When run from outside the Droidian build container, re-exec this script
+# inside it via Docker (or Podman) so a local build is identical to CI.
+#
+#   cd kernel_oneplus_sm8550
+#   bash droidian-build.sh                    # auto-uses docker
+#   CONTAINER_BIN=podman bash droidian-build.sh
+#   IS_CONTAINER=true bash droidian-build.sh  # skip (already inside container)
+#
+# Output .deb files land in the parent directory (same as CI).
+if [ -z "$IS_CONTAINER" ]; then
+    CONTAINER_BIN="${CONTAINER_BIN:-docker}"
+    if ! command -v "$CONTAINER_BIN" >/dev/null 2>&1; then
+        echo "error: $CONTAINER_BIN not found; install Docker or set CONTAINER_BIN=podman" >&2
+        exit 1
+    fi
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PARENT="$(dirname "$SCRIPT_DIR")"
+    CCACHE_VOL="${CCACHE_DIR:-$HOME/.cache/droidian-ccache}"
+    mkdir -p "$CCACHE_VOL"
+    exec "$CONTAINER_BIN" run --rm --privileged \
+        -e IS_CONTAINER=true \
+        -e RELENG_HOST_ARCH=arm64 \
+        -e GIT_DISCOVERY_ACROSS_FILESYSTEM=1 \
+        -e "DEB_BUILD_OPTIONS=parallel=$(nproc)" \
+        -e CCACHE_DIR=/ccache \
+        -e CCACHE_MAXSIZE=5G \
+        -v "$PARENT:$PARENT" \
+        -v "$CCACHE_VOL:/ccache" \
+        -w "$SCRIPT_DIR" \
+        quay.io/droidian/build-essential:bookworm-amd64 \
+        bash "$SCRIPT_DIR/droidian-build.sh"
+fi
+# ─────────────────────────────────────────────────────────────────────────────
+
 echo 'APT::Get::AllowUnauthenticated "true";' > /etc/apt/apt.conf.d/99insecure
 echo 'Acquire::AllowInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99insecure
 echo 'Acquire::Check-Valid-Until "false";' >> /etc/apt/apt.conf.d/99insecure
@@ -13,8 +49,7 @@ export PATH="/usr/lib/ccache:$PATH"
 
 # The bookworm-amd64 container ships the bookworm branch of
 # linux-packaging-snippets which only supports boot header v0/v2.
-# SM8550 needs header v4 — only the master branch handles v3/v4.
-# Master also has native BUILD_LLVM support, so no sed hacking needed.
+# SM8550 needs header v4 — only the droidian branch handles v3/v4.
 git clone --depth 1 -b droidian https://github.com/droidian/linux-packaging-snippets.git /tmp/lps-master
 cp -v /tmp/lps-master/*.mk /tmp/lps-master/*.in /tmp/lps-master/*.sh \
     /usr/share/linux-packaging-snippets/ 2>/dev/null || true
@@ -42,15 +77,6 @@ sed -i 's/\[arch=amd64\]/[arch=amd64,arm64]/g' \
 dpkg --add-architecture arm64
 apt-get update -qq 2>/dev/null || true
 
-echo "=== apt-cache policy halium-generic-initramfs ==="
-apt-cache policy halium-generic-initramfs     2>&1 || true
-apt-cache policy halium-generic-initramfs:arm64 2>&1 || true
-echo "=== apt-cache search halium ==="
-apt-cache search halium 2>&1 || true
-echo "=== /etc/apt/sources.list ==="
-cat /etc/apt/sources.list 2>/dev/null || true
-ls /etc/apt/sources.list.d/ 2>/dev/null && cat /etc/apt/sources.list.d/*.list 2>/dev/null || true
-
 # Try arm64 package → any-arch package → minimal cpio stub (non-zero so
 # mkbootimg doesn't reject a zero-length ramdisk).
 if apt-get install -y --no-install-recommends linux-initramfs-halium-generic:arm64 2>&1; then
@@ -67,7 +93,7 @@ elif apt-get install -y --no-install-recommends linux-initramfs-halium-generic 2
         fi
     done
 else
-    echo "WARNING: halium-generic-initramfs not in apt — building minimal cpio stub"
+    echo "WARNING: linux-initramfs-halium-generic not in apt — building minimal cpio stub"
     echo "Boot image will NOT run Droidian until a real initramfs is provided."
     mkdir -p "$INITRAMFS_DEST" /tmp/initrd_build
     printf '#!/bin/sh\nexec /bin/sh\n' > /tmp/initrd_build/init
@@ -81,7 +107,7 @@ fi
 releng-build-package
 
 # dpkg-buildpackage drops .deb files one level above the source tree.
-# Copy them into the workspace so upload-artifact can find them there.
+# Copy them into the workspace so CI upload-artifact and local users can find them.
 find "$(dirname "$PWD")" -maxdepth 1 -name "*.deb" -exec cp -v {} "$PWD/" \; || true
 
 ccache -s
