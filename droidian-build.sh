@@ -29,6 +29,13 @@ sed -i 's/CONFIG_DEBUG_INFO_BTF/DISABLED_BTF_FOR_DROIDIAN/g' "$PWD/scripts/link-
 # Install the real Droidian initramfs — this is the halium init that sets up
 # the Halium environment, mounts the rootfs, and starts the Android LXC container.
 # Without it, the device panics at init. The Droidian snippet packs it into boot.img.
+#
+# The build container's apt sources have [arch=amd64] pinned, which blocks arm64
+# package downloads even after dpkg --add-architecture. Widen every source to
+# include arm64 before adding the architecture and refreshing the package lists.
+sed -i 's/\[arch=amd64\]/[arch=amd64,arm64]/g' \
+    /etc/apt/sources.list \
+    /etc/apt/sources.list.d/*.list 2>/dev/null || true
 dpkg --add-architecture arm64
 apt-get update -qq 2>/dev/null || true
 apt-get install -y --no-install-recommends halium-generic-initramfs:arm64 || \
