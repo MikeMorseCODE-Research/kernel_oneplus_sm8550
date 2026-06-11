@@ -30,20 +30,53 @@ sed -i 's|HOSTLDFLAG := "-fuse-ld=lld --rtlib=compiler-rt"|HOSTLDFLAG :=|' "$SNI
 # so both BTF code blocks in the linker script evaluate to false.
 sed -i 's/CONFIG_DEBUG_INFO_BTF/DISABLED_BTF_FOR_DROIDIAN/g' "$PWD/scripts/link-vmlinux.sh"
 
-# Install the real Droidian initramfs — this is the halium init that sets up
-# the Halium environment, mounts the rootfs, and starts the Android LXC container.
-# Without it, the device panics at init. The Droidian snippet packs it into boot.img.
-#
-# The build container's apt sources have [arch=amd64] pinned, which blocks arm64
-# package downloads even after dpkg --add-architecture. Widen every source to
-# include arm64 before adding the architecture and refreshing the package lists.
+# Install the real Droidian initramfs (halium init that sets up the Halium
+# environment, mounts rootfs, starts Android LXC).  The snippet's
+# out/KERNEL_OBJ/initramfs.gz rule copies from this path:
+INITRAMFS_DEST=/usr/lib/aarch64-linux-gnu/halium-generic-initramfs
+
+# Widen apt sources from [arch=amd64] to [arch=amd64,arm64] so the arm64
+# package lists are actually fetched after dpkg --add-architecture.
 sed -i 's/\[arch=amd64\]/[arch=amd64,arm64]/g' \
-    /etc/apt/sources.list \
-    /etc/apt/sources.list.d/*.list 2>/dev/null || true
+    /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null || true
 dpkg --add-architecture arm64
 apt-get update -qq 2>/dev/null || true
-apt-get install -y --no-install-recommends halium-generic-initramfs:arm64 || \
-    apt-get install -y --no-install-recommends halium-generic-initramfs
+
+echo "=== apt-cache policy halium-generic-initramfs ==="
+apt-cache policy halium-generic-initramfs     2>&1 || true
+apt-cache policy halium-generic-initramfs:arm64 2>&1 || true
+echo "=== apt-cache search halium ==="
+apt-cache search halium 2>&1 || true
+echo "=== /etc/apt/sources.list ==="
+cat /etc/apt/sources.list 2>/dev/null || true
+ls /etc/apt/sources.list.d/ 2>/dev/null && cat /etc/apt/sources.list.d/*.list 2>/dev/null || true
+
+# Try arm64 package → any-arch package → minimal cpio stub (non-zero so
+# mkbootimg doesn't reject a zero-length ramdisk).
+if apt-get install -y --no-install-recommends halium-generic-initramfs:arm64 2>&1; then
+    echo "Installed halium-generic-initramfs:arm64"
+elif apt-get install -y --no-install-recommends halium-generic-initramfs 2>&1; then
+    echo "Installed halium-generic-initramfs (any-arch)"
+    # If the package installed to a non-aarch64-linux-gnu path, symlink it.
+    for src in /usr/lib/x86_64-linux-gnu/halium-generic-initramfs \
+               /usr/lib/halium-generic-initramfs; do
+        if [ -d "$src" ] && [ ! -e "$INITRAMFS_DEST" ]; then
+            mkdir -p "$(dirname "$INITRAMFS_DEST")"
+            ln -sfn "$src" "$INITRAMFS_DEST"
+            echo "Symlinked $src -> $INITRAMFS_DEST"
+        fi
+    done
+else
+    echo "WARNING: halium-generic-initramfs not in apt — building minimal cpio stub"
+    echo "Boot image will NOT run Droidian until a real initramfs is provided."
+    mkdir -p "$INITRAMFS_DEST" /tmp/initrd_build
+    printf '#!/bin/sh\nexec /bin/sh\n' > /tmp/initrd_build/init
+    chmod +x /tmp/initrd_build/init
+    (cd /tmp/initrd_build && find . | cpio -H newc -o \
+        | gzip -9 > "$INITRAMFS_DEST/initrd.img-halium-generic")
+    cp "$INITRAMFS_DEST/initrd.img-halium-generic" \
+       "$INITRAMFS_DEST/recovery-initramfs.img-halium-generic"
+fi
 
 releng-build-package
 cp ../*.deb "$PWD/" 2>/dev/null || true
