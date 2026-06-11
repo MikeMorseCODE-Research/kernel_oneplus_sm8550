@@ -34,14 +34,9 @@ KERNEL_CONFIG_USE_DIFFCONFIG = 0
 KERNEL_BOOTIMAGE_VERSION = 4
 KERNEL_BOOTIMAGE_PAGE_SIZE = 4096
 
-# Standard GKI 2.0 / SM8550 boot image offsets
-KERNEL_BOOTIMAGE_BASE_OFFSET = 0x00000000
-KERNEL_BOOTIMAGE_KERNEL_OFFSET = 0x00008000
-KERNEL_BOOTIMAGE_INITRAMFS_OFFSET = 0x01000000
-KERNEL_BOOTIMAGE_SECONDIMAGE_OFFSET = 0x00000000
-KERNEL_BOOTIMAGE_TAGS_OFFSET = 0x00000100
-
-# cmdline is empty in boot.img v4; vendor cmdline lives in vendor_boot.img
+# Header v4 (v3+): offsets are intentionally omitted — the master branch
+# of linux-packaging-snippets skips them for v3/v4.
+# cmdline is empty in boot.img v4; vendor cmdline lives in vendor_boot.img.
 KERNEL_BOOTIMAGE_CMDLINE =
 
 KERNEL_BOOTIMAGE_DTB_OVERLAY_SUPPORT = 0
