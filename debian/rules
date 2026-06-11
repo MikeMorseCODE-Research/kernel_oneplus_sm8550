@@ -18,13 +18,19 @@ out/kernel-stamp: out/kernel-stamp.default
 	@true
 
 # Boot header v4: ramdisk_size must be 0 (ramdisk lives in init_boot.img).
-# The droidian-branch snippet requests initramfs.default / initramfs.recovery-default
-# (pattern: initramfs.%) rather than the old initramfs.gz / recovery-initramfs.gz.
-# Zero-byte files make mkbootimg record ramdisk_size=0 in the header.
-out/KERNEL_OBJ/initramfs.%:
+# The droidian snippet's explicit rules for initramfs.gz and recovery-initramfs.gz
+# try to copy from halium-generic-initramfs (not installed). Override them with
+# explicit rules (recipe required — pattern rules lose to explicit rules in make).
+# These overrides fire AFTER the include because they appear later in the file.
+out/KERNEL_OBJ/initramfs.gz:
 	mkdir -p out/KERNEL_OBJ
 	touch $@
 
-# Keep the old gz targets so the bookworm snippet still works if ever used.
-out/KERNEL_OBJ/initramfs.gz: out/KERNEL_OBJ/initramfs.default
-out/KERNEL_OBJ/recovery-initramfs.gz: out/KERNEL_OBJ/initramfs.recovery-default
+out/KERNEL_OBJ/recovery-initramfs.gz:
+	mkdir -p out/KERNEL_OBJ
+	touch $@
+
+# Pattern rule covers initramfs.default, initramfs.recovery-default, etc.
+out/KERNEL_OBJ/initramfs.%:
+	mkdir -p out/KERNEL_OBJ
+	touch $@
