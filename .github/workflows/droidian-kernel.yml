@@ -1,109 +1,44 @@
-name: Droidian Kernel (OnePlus 11 / salami)
+name: Build Droidian Kernel
 
 on:
   push:
     branches:
-      - "**"
+      - 'claude/**'
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build kernel .deb packages
     runs-on: ubuntu-latest
     container:
       image: quay.io/droidian/build-essential:bookworm-amd64
       options: --privileged
+    env:
+      IS_CONTAINER: "true"
+      RELENG_HOST_ARCH: arm64
+      GIT_DISCOVERY_ACROSS_FILESYSTEM: "1"
+      DEB_BUILD_OPTIONS: "parallel=4"
 
     steps:
-      - name: Checkout kernel source
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
-
-      - name: Install linux-packaging-snippets
-        run: |
-          # The container image has stale Droidian repo keys (NO_PUBKEY 5E775B2A27AB0C94).
-          # Update ignoring signature errors; the package index is already cached in the image.
-          apt-get update --allow-insecure-repositories -o Acquire::AllowInsecureRepositories=true || true
-          apt-get install -y --allow-unauthenticated --no-install-recommends linux-packaging-snippets cpio
+          submodules: false
 
       - name: Build kernel packages
-        env:
-          # releng-build-package detects container environments via IS_CONTAINER.
-          # GitHub Actions is not in its CI list, so BRANCH stays empty and
-          # git checkout origin/${BRANCH} fails. IS_CONTAINER=true makes it use
-          # git rev-parse --abbrev-ref HEAD instead.
-          IS_CONTAINER: "true"
-          # Tell debuild to cross-compile for arm64.
-          RELENG_HOST_ARCH: "arm64"
-          # Allow git to traverse across the Docker volume filesystem boundary.
-          GIT_DISCOVERY_ACROSS_FILESYSTEM: "1"
-        run: |
-          # GitHub Actions does not persist the safe.directory set by actions/checkout
-          # into the container's HOME. Configure it here so git commands work.
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          # The Droidian container has stale GPG keys. releng-build-package runs its
-          # own internal apt-get update, so we must configure APT system-wide to
-          # tolerate unsigned repos before calling it.
-          echo 'Acquire::AllowInsecureRepositories "true";' > /etc/apt/apt.conf.d/99allow-insecure
-          echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-insecure
-          # The vendor kernel has ~30 symlinks pointing into sm8550-modules and
-          # sm8550-devicetrees which are separate repos not checked out here.
-          # Kconfig traversal hits them unconditionally; stub each dangling symlink
-          # with a real directory + empty Kconfig + Makefile so the build can proceed.
-          find . -maxdepth 10 -type l 2>/dev/null | while IFS= read -r link; do
-            if ! test -e "$link"; then
-              echo "Stubbing dangling symlink: $link"
-              rm "$link"
-              mkdir -p "$link"
-              touch "$link/Kconfig" "$link/Makefile"
-            fi
-          done
-          # The installed kernel-snippet.mk predates the BUILD_LLVM=1 → LLVM=1 LLVM_IAS=1
-          # mapping. Without LLVM=1, LD defaults to the host x86_64 GNU ld which cannot
-          # link arm64 objects, and ThinLTO (CONFIG_LTO_CLANG_THIN) fails. Patch every
-          # make invocation line in the snippet to inject LLVM=1 LLVM_IAS=1.
-          SNIPPET=/usr/share/linux-packaging-snippets/kernel-snippet.mk
-          if ! grep -q 'LLVM=1' "$SNIPPET"; then
-            sed -i '/\$(MAKE)/s/CC=$(BUILD_CC)/LLVM=1 LLVM_IAS=1 CC=$(BUILD_CC)/g' "$SNIPPET"
-            echo "Patched kernel-snippet.mk: added LLVM=1 LLVM_IAS=1 to make invocations"
-          fi
-          # halium-generic-initramfs is unavailable; patch the snippet to generate
-          # a stub initramfs with gzip instead of copying from the missing package.
-          sed -i 's|cp /usr/lib/aarch64-linux-gnu/halium-generic-initramfs/initrd.img-halium-generic|gzip -c /dev/null >|g' "$SNIPPET"
-          # kernel-snippet.mk merges droidian/common_fragments/halium.config and
-          # droidian/common_fragments/droidian.config (shipped by linux-packaging-snippets)
-          # then droidian/.config (device-specific) on top of gki_defconfig.
-          # Copy common fragments from the installed package; fall back to empty files.
-          SNIPPETS=/usr/share/linux-packaging-snippets
-          mkdir -p droidian/common_fragments
-          for frag in halium droidian; do
-            if [ -f "$SNIPPETS/common_fragments/${frag}.config" ]; then
-              cp "$SNIPPETS/common_fragments/${frag}.config" "droidian/common_fragments/${frag}.config"
-            elif [ -f "$SNIPPETS/${frag}.config" ]; then
-              cp "$SNIPPETS/${frag}.config" "droidian/common_fragments/${frag}.config"
-            else
-              touch "droidian/common_fragments/${frag}.config"
-            fi
-          done
-          # Merge device-specific fragments into droidian/.config.
-          # oplus.config enables SM8550-specific features that are excluded from
-          # the droidian.config disables below.
-          cat droidian/kalama.config droidian/oplus.config droidian/droidian.config \
-            > droidian/.config
-          # halium-generic-initramfs is unavailable in this container; create a stub
-          # so kernel-snippet.mk can proceed. Boot header v4 has ramdisk_size=0 anyway.
-          releng-build-package
+        run: bash droidian-build.sh 2>&1 | tee /tmp/build.log; exit ${PIPESTATUS[0]}
 
-      - name: Collect .deb artifacts
-        run: |
-          mkdir -p /tmp/out
-          find . -maxdepth 1 -name "*.deb" -exec cp {} /tmp/out/ \;
-          ls -lh /tmp/out/
-
-      - name: Upload artifacts
+      - name: Upload .deb packages
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: droidian-kernel-oneplus-salami
-          path: /tmp/out/*.deb
-          if-no-files-found: error
+          name: kernel-debs-${{ github.sha }}
+          path: ../*.deb
+          retention-days: 14
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-${{ github.sha }}
+          path: /tmp/build.log
+          retention-days: 7
