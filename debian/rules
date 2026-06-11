@@ -17,20 +17,3 @@ execute_before_dh_auto_build:
 out/kernel-stamp: out/kernel-stamp.default
 	@true
 
-# Boot header v4: ramdisk_size must be 0 (ramdisk lives in init_boot.img).
-# The droidian snippet's explicit rules for initramfs.gz and recovery-initramfs.gz
-# try to copy from halium-generic-initramfs (not installed). Override them with
-# explicit rules (recipe required — pattern rules lose to explicit rules in make).
-# These overrides fire AFTER the include because they appear later in the file.
-out/KERNEL_OBJ/initramfs.gz:
-	mkdir -p out/KERNEL_OBJ
-	touch $@
-
-out/KERNEL_OBJ/recovery-initramfs.gz:
-	mkdir -p out/KERNEL_OBJ
-	touch $@
-
-# Pattern rule covers initramfs.default, initramfs.recovery-default, etc.
-out/KERNEL_OBJ/initramfs.%:
-	mkdir -p out/KERNEL_OBJ
-	touch $@

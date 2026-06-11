@@ -26,13 +26,13 @@ sed -i 's|HOSTLDFLAG := "-fuse-ld=lld --rtlib=compiler-rt"|HOSTLDFLAG :=|' "$SNI
 # so both BTF code blocks in the linker script evaluate to false.
 sed -i 's/CONFIG_DEBUG_INFO_BTF/DISABLED_BTF_FOR_DROIDIAN/g' "$PWD/scripts/link-vmlinux.sh"
 
-# The snippet's initramfs rules cp from halium-generic-initramfs (not installed).
-# The snippet expands $(DEB_HOST_MULTIARCH) as aarch64-linux-gnu in make context.
-# Hardcode the arm64 multiarch path — dpkg-architecture in this amd64 container
-# returns x86_64-linux-gnu which would mismatch.
-mkdir -p /usr/lib/aarch64-linux-gnu/halium-generic-initramfs/
-touch /usr/lib/aarch64-linux-gnu/halium-generic-initramfs/initrd.img-halium-generic
-touch /usr/lib/aarch64-linux-gnu/halium-generic-initramfs/recovery-initramfs.img-halium-generic
+# Install the real Droidian initramfs — this is the halium init that sets up
+# the Halium environment, mounts the rootfs, and starts the Android LXC container.
+# Without it, the device panics at init. The Droidian snippet packs it into boot.img.
+dpkg --add-architecture arm64
+apt-get update -qq 2>/dev/null || true
+apt-get install -y --no-install-recommends halium-generic-initramfs:arm64 || \
+    apt-get install -y --no-install-recommends halium-generic-initramfs
 
 releng-build-package
 cp ../*.deb "$PWD/" 2>/dev/null || true
