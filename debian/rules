@@ -5,11 +5,13 @@ include /usr/share/linux-packaging-snippets/kernel-snippet.mk
 	dh $@
 
 # Boot header v4: ramdisk_size must be 0 (ramdisk lives in init_boot.img).
+# The droidian-branch snippet requests initramfs.default / initramfs.recovery-default
+# (pattern: initramfs.%) rather than the old initramfs.gz / recovery-initramfs.gz.
 # Zero-byte files make mkbootimg record ramdisk_size=0 in the header.
-out/KERNEL_OBJ/initramfs.gz: out/kernel-stamp
+out/KERNEL_OBJ/initramfs.%:
 	mkdir -p out/KERNEL_OBJ
 	touch $@
 
-out/KERNEL_OBJ/recovery-initramfs.gz: out/kernel-stamp
-	mkdir -p out/KERNEL_OBJ
-	touch $@
+# Keep the old gz targets so the bookworm snippet still works if ever used.
+out/KERNEL_OBJ/initramfs.gz: out/KERNEL_OBJ/initramfs.default
+out/KERNEL_OBJ/recovery-initramfs.gz: out/KERNEL_OBJ/initramfs.recovery-default
