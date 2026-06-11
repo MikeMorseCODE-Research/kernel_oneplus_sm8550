@@ -24,7 +24,7 @@ sed -i 's|HOSTLDFLAG := "-fuse-ld=lld --rtlib=compiler-rt"|HOSTLDFLAG :=|' "$SNI
 # Neuter BTF in link-vmlinux.sh — pahole may not be available and
 # Droidian doesn't need BTF. This makes the check variable unrecognizable
 # so both BTF code blocks in the linker script evaluate to false.
-sed -i 's/CONFIG_DEBUG_INFO_BTF/DISABLED_BTF_FOR_DROIDIAN/g' /workspace/scripts/link-vmlinux.sh
+sed -i 's/CONFIG_DEBUG_INFO_BTF/DISABLED_BTF_FOR_DROIDIAN/g' "$PWD/scripts/link-vmlinux.sh"
 
 releng-build-package
-cp ../*.deb /workspace/ 2>/dev/null || true
+cp ../*.deb "$PWD/" 2>/dev/null || true

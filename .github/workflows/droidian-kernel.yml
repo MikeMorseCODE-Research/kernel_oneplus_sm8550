@@ -25,6 +25,7 @@ jobs:
           submodules: false
 
       - name: Build kernel packages
+        shell: bash
         run: bash droidian-build.sh 2>&1 | tee /tmp/build.log; exit ${PIPESTATUS[0]}
 
       - name: Upload .deb packages
