@@ -26,14 +26,13 @@ sed -i 's|HOSTLDFLAG := "-fuse-ld=lld --rtlib=compiler-rt"|HOSTLDFLAG :=|' "$SNI
 # so both BTF code blocks in the linker script evaluate to false.
 sed -i 's/CONFIG_DEBUG_INFO_BTF/DISABLED_BTF_FOR_DROIDIAN/g' "$PWD/scripts/link-vmlinux.sh"
 
-# The snippet's initramfs.gz rule requires halium-generic-initramfs (not installed).
-# Stub it out with a zero-byte file. The snippet does a plain `cp` of it to
-# out/KERNEL_OBJ/initramfs.gz, so a 0-byte stub produces a 0-byte ramdisk →
-# mkbootimg records ramdisk_size=0 in the boot header, which is correct for v4.
-DEB_HOST_MULTIARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH)
-mkdir -p "/usr/lib/${DEB_HOST_MULTIARCH}/halium-generic-initramfs"
-touch "/usr/lib/${DEB_HOST_MULTIARCH}/halium-generic-initramfs/initrd.img-halium-generic"
-touch "/usr/lib/${DEB_HOST_MULTIARCH}/halium-generic-initramfs/recovery-initramfs.img-halium-generic"
+# The snippet's initramfs rules cp from halium-generic-initramfs (not installed).
+# The snippet expands $(DEB_HOST_MULTIARCH) as aarch64-linux-gnu in make context.
+# Hardcode the arm64 multiarch path — dpkg-architecture in this amd64 container
+# returns x86_64-linux-gnu which would mismatch.
+mkdir -p /usr/lib/aarch64-linux-gnu/halium-generic-initramfs/
+touch /usr/lib/aarch64-linux-gnu/halium-generic-initramfs/initrd.img-halium-generic
+touch /usr/lib/aarch64-linux-gnu/halium-generic-initramfs/recovery-initramfs.img-halium-generic
 
 releng-build-package
 cp ../*.deb "$PWD/" 2>/dev/null || true
