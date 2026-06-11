@@ -37,7 +37,7 @@ KERNEL_BOOTIMAGE_PAGE_SIZE = 4096
 # Header v4 (v3+): offsets are intentionally omitted — the master branch
 # of linux-packaging-snippets skips them for v3/v4.
 # cmdline is empty in boot.img v4; vendor cmdline lives in vendor_boot.img.
-KERNEL_BOOTIMAGE_CMDLINE =
+KERNEL_BOOTIMAGE_CMDLINE = boot=halium
 
 KERNEL_BOOTIMAGE_DTB_OVERLAY_SUPPORT = 0
 
