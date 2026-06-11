@@ -17,12 +17,23 @@ jobs:
       RELENG_HOST_ARCH: arm64
       GIT_DISCOVERY_ACROSS_FILESYSTEM: "1"
       DEB_BUILD_OPTIONS: "parallel=4"
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 5G
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: false
+
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ccache-sm8550-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            ccache-sm8550-${{ github.ref_name }}-
+            ccache-sm8550-
 
       - name: Build kernel packages
         shell: bash

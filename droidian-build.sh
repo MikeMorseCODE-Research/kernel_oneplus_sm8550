@@ -5,7 +5,11 @@ echo 'Acquire::AllowInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99insec
 echo 'Acquire::Check-Valid-Until "false";' >> /etc/apt/apt.conf.d/99insecure
 apt-get update -qq 2>/dev/null || true
 apt-get install -y --no-install-recommends \
-    linux-packaging-snippets cpio libelf-dev zlib1g-dev dwarves git
+    linux-packaging-snippets cpio libelf-dev zlib1g-dev dwarves git ccache
+
+# Prepend ccache's compiler masquerade directory so every clang/gcc invocation
+# goes through ccache transparently without touching BUILD_CC.
+export PATH="/usr/lib/ccache:$PATH"
 
 # The bookworm-amd64 container ships the bookworm branch of
 # linux-packaging-snippets which only supports boot header v0/v2.
@@ -43,3 +47,5 @@ apt-get install -y --no-install-recommends halium-generic-initramfs:arm64 || \
 
 releng-build-package
 cp ../*.deb "$PWD/" 2>/dev/null || true
+
+ccache -s
