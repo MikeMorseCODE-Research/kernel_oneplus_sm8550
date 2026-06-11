@@ -53,10 +53,10 @@ ls /etc/apt/sources.list.d/ 2>/dev/null && cat /etc/apt/sources.list.d/*.list 2>
 
 # Try arm64 package → any-arch package → minimal cpio stub (non-zero so
 # mkbootimg doesn't reject a zero-length ramdisk).
-if apt-get install -y --no-install-recommends halium-generic-initramfs:arm64 2>&1; then
-    echo "Installed halium-generic-initramfs:arm64"
-elif apt-get install -y --no-install-recommends halium-generic-initramfs 2>&1; then
-    echo "Installed halium-generic-initramfs (any-arch)"
+if apt-get install -y --no-install-recommends linux-initramfs-halium-generic:arm64 2>&1; then
+    echo "Installed linux-initramfs-halium-generic:arm64"
+elif apt-get install -y --no-install-recommends linux-initramfs-halium-generic 2>&1; then
+    echo "Installed linux-initramfs-halium-generic (any-arch)"
     # If the package installed to a non-aarch64-linux-gnu path, symlink it.
     for src in /usr/lib/x86_64-linux-gnu/halium-generic-initramfs \
                /usr/lib/halium-generic-initramfs; do
