@@ -33,6 +33,7 @@ sed -i 's/CONFIG_DEBUG_INFO_BTF/DISABLED_BTF_FOR_DROIDIAN/g' "$PWD/scripts/link-
 DEB_HOST_MULTIARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH)
 mkdir -p "/usr/lib/${DEB_HOST_MULTIARCH}/halium-generic-initramfs"
 touch "/usr/lib/${DEB_HOST_MULTIARCH}/halium-generic-initramfs/initrd.img-halium-generic"
+touch "/usr/lib/${DEB_HOST_MULTIARCH}/halium-generic-initramfs/recovery-initramfs.img-halium-generic"
 
 releng-build-package
 cp ../*.deb "$PWD/" 2>/dev/null || true
