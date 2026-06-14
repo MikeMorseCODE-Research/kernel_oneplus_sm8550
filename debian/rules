@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+include /usr/share/linux-packaging-snippets/kernel-snippet.mk
+
+%:
+	dh $@
+
+# Run prepare before the parallel Image build so that arch include
+# symlinks and output subdirectories exist. Without this, -j16 races
+# against the directory creation and fails with missing asm headers.
+execute_before_dh_auto_build:
+	$(BUILD_COMMAND) prepare
+
+# The droidian-branch snippet has no plain out/kernel-stamp target (only
+# out/kernel-stamp.default and out/kernel-stamp.%). Something in the build
+# chain requests the unsuffixed form; alias it so the wildcard %: dh $@
+# doesn't catch it.
+out/kernel-stamp: out/kernel-stamp.default
+	@true
+

@@ -1,0 +1,56 @@
+name: Build Droidian Kernel
+
+on:
+  push:
+    branches:
+      - 'claude/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/droidian/build-essential:bookworm-amd64
+      options: --privileged
+    env:
+      IS_CONTAINER: "true"
+      RELENG_HOST_ARCH: arm64
+      GIT_DISCOVERY_ACROSS_FILESYSTEM: "1"
+      DEB_BUILD_OPTIONS: "parallel=4"
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 5G
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ccache-sm8550-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            ccache-sm8550-${{ github.ref_name }}-
+            ccache-sm8550-
+
+      - name: Build kernel packages
+        shell: bash
+        run: bash droidian-build.sh 2>&1 | tee /tmp/build.log; exit ${PIPESTATUS[0]}
+
+      - name: Upload .deb packages
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-debs-${{ github.sha }}
+          path: "*.deb"
+          retention-days: 14
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-${{ github.sha }}
+          path: /tmp/build.log
+          retention-days: 7

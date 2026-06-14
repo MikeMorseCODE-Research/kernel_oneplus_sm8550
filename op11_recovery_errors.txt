@@ -1,0 +1,61 @@
+OnePlus 11 (CPH2449 / salami / SM8550) Recovery Errors
+=======================================================
+
+## Device Info
+- Device: OnePlus 11 (salami, CPH2449)
+- SoC: Snapdragon 8 Gen 2 (SM8550)
+- Boot header: v4 (Android 13 GKI 2.0)
+- Bootloader: unlocked
+
+## Primary Userspace Error
+"Failed to boot into userspace fastboot; one or more components might be unbootable."
+- Appeared on phone screen after: fastboot reboot fastboot
+- Also appeared after: fastboot reboot recovery
+- Both slots showed: slot-successful=no, slot-retry-count=7, slot-unbootable=no
+
+## fastboot boot Error
+"fastboot failed to load/authenticate boot image: Device Error"
+- Appeared when running: fastboot boot recovery.img
+- Suspected cause: incorrect platform-tools version causing --disable-verity flags not applying correctly to vbmeta
+
+## EDL / Sahara Errors
+"received non-successful end-of-image result"
+- Appeared when running: qdl --storage ufs prog_firehose_ddr.elf rawprogram0.xml patch0.xml
+- Sahara status code: 0x0D
+- RX packet: 04000000 10000000 0d000000 01000000
+- Suspected causes: ARB fuse level mismatch OR Sahara timing issues over VirtualBox USB passthrough
+
+"failed to read sahara request from device"
+- Appeared during edl.py attempts
+- Device detected as 9008 but communication dropped after ELF upload
+
+## fastboot flash super Errors
+"cannot enumerate USB" - USB disconnect during large sparse chunk transfer
+- Occurred consistently at chunk 2/5 (default chunk size ~782MB)
+- Reduced with -S 200m (19 chunks) but still dropped at chunk 2
+- Fixed eventually by charging battery and direct USB 2.0 connection
+
+## lpmake Errors
+"error: file_write: write: No space left on device"
+"sparse_file_write failed with code: -1"
+"Could not open image for partition: system_a"
+- Caused by /tmp being 100% full (tmpfs 7.4G)
+- Fix: TMPDIR=~ and clear /tmp
+
+"Invalid sparse file format at header magic"
+- lpmake requires sparse input images when using --image flag
+- Fix: convert with img2simg first
+
+## GPT / Partition Table
+"FAILED (remote: 'Critical partition')"
+- Appeared when attempting: fastboot flash partition gpt_both0.bin
+- Bootloader blocks GPT flashing via fastboot
+
+## Key Facts for Recovery
+- super partition size: 0x3F1B6F000 (16,940,199,936 bytes)
+- super LPT group names: qti_dynamic_partitions_a / qti_dynamic_partitions_b
+- metadata-slots: 3
+- Device has dedicated recovery_a partition (0x6400000 = 100MB)
+- has-slot:system = no (normal for virtual A/B)
+- Correct platform-tools version is critical for vbmeta --disable-verity to work
+- OFP package: prog_firehose_ddr.elf present but rejected (ARB or Sahara VM latency)
